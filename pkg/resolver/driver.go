@@ -127,6 +127,10 @@ func Resolve(req *packages.DriverRequest, patterns ...string) (*packages.DriverR
 				return nil
 			}
 
+			if path == "." {
+				return nil
+			}
+
 			// Skip if we already processed this package from libsRoot
 			if processedPkgs[path] {
 				return nil
@@ -162,16 +166,18 @@ func Resolve(req *packages.DriverRequest, patterns ...string) (*packages.DriverR
 		if file == "..." {
 			gnomodsRes, err := listPackagesPath(dir)
 			if err != nil {
-				logger.Error("failed to get pkg list", slog.String("error", err.Error()))
-				return nil, err
+				logger.Error("failed to get pkg list", slog.String("dir", dir), slog.String("error", err.Error()))
+				// Don't return error - just skip this target and continue
+				continue
 			}
 			pkgpaths = append(pkgpaths, gnomodsRes...)
 		} else if strings.HasPrefix(target, "file=") {
 			dir = strings.TrimPrefix(dir, "file=")
 			gnomodsRes, err := listPackagesPath(dir)
 			if err != nil {
-				logger.Error("failed to get pkg", slog.String("error", err.Error()))
-				return nil, err
+				logger.Error("failed to get pkg", slog.String("dir", dir), slog.String("error", err.Error()))
+				// Don't return error - just skip this target and continue
+				continue
 			}
 			if len(gnomodsRes) != 1 {
 				logger.Warn("unexpected number of packages",
